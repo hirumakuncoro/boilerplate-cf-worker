@@ -1,0 +1,51 @@
+@baseUrl = https://boilerplate-cf-worker-production.ikhsanheriyawan2404.workers.dev
+@contentType = application/json
+
+### 0. HEALTH
+POST {{baseUrl}}/health
+Content-Type: {{contentType}}
+
+### 1. REGISTER USER BARU
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "ikhsan.fdeveloper@example.com",
+  "password": "SuperSecurePassword123!",
+  "name": "Ikhsan"
+}
+
+### 2. LOGIN USER
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "ikhsan.fdeveloper@example.com",
+  "password": "SuperSecurePassword123!"
+}
+
+### Variable otomatis dari response login
+@authToken = {{login.response.body.data.accessToken}}
+@refreshToken = {{login.response.body.data.refreshToken}}
+
+### 3. REFRESH TOKEN
+POST {{baseUrl}}/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### 4. GET PROFILE (ME)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+
+### 5. LOGOUT USER
+POST {{baseUrl}}/auth/logout
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}

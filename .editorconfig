@@ -1,0 +1,21 @@
+# EditorConfig membantu developer mempertahankan gaya coding yang konsisten
+# antar editor dan IDE yang berbeda.
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{js,jsx,ts,tsx,json}]
+# Optimasi tambahan untuk file JavaScript/TypeScript dan JSON
+indent_style = space
+indent_size = 2
+
+[*.md]
+# Khusus Markdown, biarkan trailing whitespace di akhir baris 
+# karena sering digunakan untuk ganti baris (linebreak)
+trim_trailing_whitespace = false

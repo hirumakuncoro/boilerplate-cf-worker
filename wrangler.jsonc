@@ -1,0 +1,67 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "boilerplate-cf-worker",
+	"main": "src/server.ts",
+	"compatibility_date": "2026-06-25",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  },
+	"vars": {
+		"DB_DRIVER": "pg",
+		"STORAGE_DRIVER": "minio",
+		"STORAGE_PUBLIC_URL": "http://localhost/global",
+		"MINIO_ENDPOINT": "http://localhost",
+		"MINIO_BUCKET": "global",
+	},
+	"env": {
+		"development": {
+			"vars": {
+				"DB_DRIVER": "pg",
+				"STORAGE_DRIVER": "minio",
+				"STORAGE_PUBLIC_URL": "http://localhost:9000/global",
+				"MINIO_ENDPOINT": "http://localhost:9000",
+				"MINIO_BUCKET": "global"
+			}
+		},
+		"production": {
+			"vars": {
+				"DB_DRIVER": "pg",
+				"STORAGE_DRIVER": "r2",
+				"STORAGE_PUBLIC_URL": "http://localhost/global",
+				"MINIO_ENDPOINT": "http://localhost",
+				"MINIO_BUCKET": "global"
+			},
+			"hyperdrive": [
+				{
+					"binding": "HYPERDRIVE",
+					"id": "2842512317f84082b2ba53ce8bbad137"
+				}
+			],
+      "kv_namespaces": [
+        {
+          "binding": "STORE",
+          "id": "a42f616a492e4a888819a939b93db383"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "BUCKET",
+          "bucket_name": "global-bucket"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "my-database",
+          "database_id": "0207710d-f014-41b7-a59b-fef382ecb241"
+        }
+      ],
+		}
+	},
+}
