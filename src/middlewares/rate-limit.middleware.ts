@@ -16,9 +16,12 @@ export const rateLimitMiddleware = async (c: Context<Env>, next: Next) => {
     throw new TooManyRequestsError('Terlalu banyak percobaan, coba lagi nanti')
   }
 
-  await c.env.STORE.put(key, String(attempts + 1), {
-    expirationTtl: WINDOW_SECONDS,
-  })
+  // Increment counter di background — tidak blocking response
+  c.executionCtx.waitUntil(
+    c.env.STORE.put(key, String(attempts + 1), {
+      expirationTtl: WINDOW_SECONDS,
+    })
+  )
 
   await next()
 }
