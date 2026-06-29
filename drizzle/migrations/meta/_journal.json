@@ -15,6 +15,13 @@
       "when": 1782460247714,
       "tag": "0001_living_zarek",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782702137471,
+      "tag": "0002_complex_warpath",
+      "breakpoints": true
     }
   ]
 }

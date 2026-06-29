@@ -8,7 +8,6 @@ export type Env = {
     DB_DRIVER: DbDriver
     DATABASE_URL: string
     JWT_SECRET: string
-    STORE: KVNamespace
     // Storage
     STORAGE_DRIVER: StorageDriver
     STORAGE_PUBLIC_URL: string
