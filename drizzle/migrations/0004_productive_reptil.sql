@@ -1,0 +1,1 @@
+ALTER TABLE "files" ADD CONSTRAINT "files_file_key_unique" UNIQUE("file_key");
