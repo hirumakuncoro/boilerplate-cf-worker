@@ -10,32 +10,54 @@
     "logs": {
       "enabled": true,
       "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true
     }
   },
 	"vars": {
 		"DB_DRIVER": "pg",
 		"STORAGE_DRIVER": "minio",
-		"STORAGE_PUBLIC_URL": "http://localhost/global",
+		"STORAGE_PUBLIC_URL": "",
 		"MINIO_ENDPOINT": "http://localhost",
 		"MINIO_BUCKET": "global",
+		"R2_ACCOUNT_ID": "",
+		"R2_BUCKET_NAME": ""
 	},
 	"env": {
 		"development": {
 			"vars": {
 				"DB_DRIVER": "pg",
 				"STORAGE_DRIVER": "minio",
-				"STORAGE_PUBLIC_URL": "http://localhost:9000/global",
+				"STORAGE_PUBLIC_URL": "",
 				"MINIO_ENDPOINT": "http://localhost:9000",
-				"MINIO_BUCKET": "global"
-			}
+				"MINIO_BUCKET": "global",
+				"R2_ACCOUNT_ID": "",
+				"R2_BUCKET_NAME": ""
+			},
+      "r2_buckets": [
+        {
+          "binding": "BUCKET",
+          "bucket_name": "global-bucket"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "my-database",
+          "database_id": "0207710d-f014-41b7-a59b-fef382ecb241"
+        }
+      ],
 		},
 		"production": {
 			"vars": {
 				"DB_DRIVER": "pg",
 				"STORAGE_DRIVER": "r2",
-				"STORAGE_PUBLIC_URL": "http://localhost/global",
-				"MINIO_ENDPOINT": "http://localhost",
-				"MINIO_BUCKET": "global"
+				"STORAGE_PUBLIC_URL": "",
+				"MINIO_ENDPOINT": "",
+				"MINIO_BUCKET": "",
+				"R2_ACCOUNT_ID": "57ff693a5f4f0639b8a5bd5fe8315e1e",
+				"R2_BUCKET_NAME": "global-bucket"
 			},
 			"hyperdrive": [
 				{

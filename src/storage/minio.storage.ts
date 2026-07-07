@@ -1,25 +1,34 @@
-import { IStorage, UploadOptions, StorageObject } from './IStorage'
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+  HeadObjectCommand,
+} from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { IStorage, UploadOptions, StorageObject, PresignedUploadResult } from './IStorage'
 
 export class MinioStorage implements IStorage {
+  private client: S3Client
+
   constructor(
     private endpoint: string,
     private bucket: string,
-    private accessKey: string,
-    private secretKey: string,
-    private publicUrl: string
-  ) {}
-
-  private async getSignedHeaders(
-    method: string,
-    key: string,
-    contentType?: string
-  ): Promise<Headers> {
-    const date = new Date().toUTCString()
-    const headers = new Headers()
-    headers.set('Host', new URL(this.endpoint).host)
-    headers.set('Date', date)
-    if (contentType) headers.set('Content-Type', contentType)
-    return headers
+    accessKey: string,
+    secretKey: string,
+    private publicUrl: string,
+  ) {
+    this.client = new S3Client({
+      endpoint: this.endpoint,
+      region: 'auto',
+      credentials: {
+        accessKeyId: accessKey,
+        secretAccessKey: secretKey,
+      },
+      // Wajib untuk MinIO/S3-compatible: pakai path-style URL (bukan virtual-hosted)
+      forcePathStyle: true,
+    })
   }
 
   async put(
@@ -27,59 +36,94 @@ export class MinioStorage implements IStorage {
     value: ReadableStream | ArrayBuffer | Blob,
     options?: UploadOptions
   ): Promise<void> {
-    const url = `${this.endpoint}/${this.bucket}/${key}`
-    const headers = await this.getSignedHeaders('PUT', key, options?.contentType)
+    let body: Uint8Array
+    if (value instanceof Blob) {
+      body = new Uint8Array(await value.arrayBuffer())
+    } else if (value instanceof ArrayBuffer) {
+      body = new Uint8Array(value)
+    } else {
+      const resp = new Response(value)
+      body = new Uint8Array(await resp.arrayBuffer())
+    }
 
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers,
-      body: value,
-    })
-
-    if (!res.ok) throw new Error(`MinIO put failed: ${res.statusText}`)
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+        ContentType: options?.contentType,
+        Metadata: options?.metadata,
+      })
+    )
   }
 
   async get(key: string): Promise<Blob | null> {
-    const url = `${this.endpoint}/${this.bucket}/${key}`
-    const headers = await this.getSignedHeaders('GET', key)
-
-    const res = await fetch(url, { method: 'GET', headers })
-    if (res.status === 404) return null
-    if (!res.ok) throw new Error(`MinIO get failed: ${res.statusText}`)
-
-    return await res.blob()
+    try {
+      const res = await this.client.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key })
+      )
+      if (!res.Body) return null
+      const bytes = await res.Body.transformToByteArray()
+      return new Blob([bytes], { type: res.ContentType })
+    } catch (err: any) {
+      if (err?.name === 'NoSuchKey' || err?.$metadata?.httpStatusCode === 404) return null
+      throw err
+    }
   }
 
   async delete(key: string): Promise<void> {
-    const url = `${this.endpoint}/${this.bucket}/${key}`
-    const headers = await this.getSignedHeaders('DELETE', key)
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key })
+    )
+  }
 
-    const res = await fetch(url, { method: 'DELETE', headers })
-    if (!res.ok) throw new Error(`MinIO delete failed: ${res.statusText}`)
+  async exists(key: string): Promise<boolean> {
+    try {
+      await this.client.send(
+        new HeadObjectCommand({ Bucket: this.bucket, Key: key })
+      )
+      return true
+    } catch (err: any) {
+      if (err?.name === 'NotFound' || err?.$metadata?.httpStatusCode === 404) return false
+      throw err
+    }
   }
 
   async list(prefix?: string): Promise<StorageObject[]> {
-    const url = new URL(`${this.endpoint}/${this.bucket}`)
-    if (prefix) url.searchParams.set('prefix', prefix)
-    url.searchParams.set('list-type', '2')
+    const res = await this.client.send(
+      new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix })
+    )
 
-    const headers = await this.getSignedHeaders('GET', '')
-    const res = await fetch(url.toString(), { method: 'GET', headers })
-    if (!res.ok) throw new Error(`MinIO list failed: ${res.statusText}`)
-
-    const text = await res.text()
-    const keys = [...text.matchAll(/<Key>(.*?)<\/Key>/g)].map((m) => m[1])
-    const sizes = [...text.matchAll(/<Size>(.*?)<\/Size>/g)].map((m) => Number(m[1]))
-    const dates = [...text.matchAll(/<LastModified>(.*?)<\/LastModified>/g)].map((m) => new Date(m[1]))
-
-    return keys.map((key, i) => ({
-      key,
-      size: sizes[i] ?? 0,
-      uploadedAt: dates[i] ?? new Date(),
+    return (res.Contents ?? []).map((obj) => ({
+      key: obj.Key ?? '',
+      size: obj.Size ?? 0,
+      uploadedAt: obj.LastModified ?? new Date(),
     }))
   }
 
   getPublicUrl(key: string): string {
     return `${this.publicUrl}/${key}`
+  }
+
+  async getUploadUrl(
+    key: string,
+    contentType: string,
+    expiresIn: number = 300,
+    maxSize?: number
+  ): Promise<PresignedUploadResult> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ContentType: contentType,
+    })
+
+    const uploadUrl = await getSignedUrl(this.client, command, { expiresIn })
+
+    return { uploadUrl, key, expiresIn, maxSize }
+  }
+
+  async getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: key })
+    return getSignedUrl(this.client, command, { expiresIn })
   }
 }

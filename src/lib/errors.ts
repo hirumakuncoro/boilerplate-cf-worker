@@ -29,3 +29,9 @@ export class TooManyRequestsError extends HTTPException {
     super(429, { message })
   }
 }
+
+export class ConflictError extends HTTPException {
+  constructor(message = 'Conflict') {
+    super(409, { message })
+  }
+}

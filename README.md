@@ -10,7 +10,7 @@ Hono + Cloudflare Workers + Drizzle ORM. Support agnostic DB (D1 / PostgreSQL) d
 - **Framework:** Hono
 - **ORM:** Drizzle
 - **DB:** D1 (default) atau PostgreSQL via Hyperdrive
-- **Storage:** R2 (default) atau MinIO
+- **Storage:** R2 (default, via @aws-sdk/client-s3 untuk presigned URL) atau MinIO
 - **Auth:** JWT (access token 15 menit + refresh token 7 hari via KV)
 
 ---
@@ -98,6 +98,7 @@ bun run dev
 bun run db:generate   # generate migration files
 bun run db:migrate    # jalankan migration ke DB
 bun run db:studio     # GUI untuk lihat data (opsional)
+bun run db:push       # push schema langsung tanpa migration file (dev only)
 ```
 
 ---
@@ -120,6 +121,8 @@ wrangler secret put DATABASE_URL --env production
 wrangler secret put JWT_SECRET --env production
 wrangler secret put MINIO_ACCESS_KEY --env production
 wrangler secret put MINIO_SECRET_KEY --env production
+wrangler secret put R2_ACCESS_KEY_ID --env production
+wrangler secret put R2_SECRET_ACCESS_KEY --env production
 ```
 
 **2. Setup Hyperdrive (kalau pakai PostgreSQL di VPS):**
@@ -242,6 +245,11 @@ POST /upload              # Upload file (butuh Bearer token)
 | `JWT_SECRET` | Secret untuk JWT | ✅ |
 | `STORAGE_DRIVER` | `r2` atau `minio` | ❌ |
 | `STORAGE_PUBLIC_URL` | Base URL public storage | ❌ |
+| `STORAGE_IS_PUBLIC` | `true`/`false` — apakah bucket bisa diakses public URL langsung | ❌ |
+| `R2_ACCOUNT_ID` | Cloudflare Account ID (buat presigned URL) | ❌ |
+| `R2_BUCKET_NAME` | Nama bucket R2 (string, buat S3 API) | ❌ |
+| `R2_ACCESS_KEY_ID` | R2 API Token access key (buat presigned URL) | ✅ |
+| `R2_SECRET_ACCESS_KEY` | R2 API Token secret key (buat presigned URL) | ✅ |
 | `MINIO_ENDPOINT` | Endpoint MinIO | ❌ |
 | `MINIO_BUCKET` | Nama bucket MinIO | ❌ |
 | `MINIO_ACCESS_KEY` | Access key MinIO | ✅ |

@@ -11,7 +11,7 @@ const app = new Hono<Env>()
 // app.use('*', logger())
 
 app.use('*', cors({
-  origin: ['https://myapp.com', 'http://localhost:5173'],
+  origin: ['https://storage-nij.pages.dev', 'http://localhost:5173'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }))

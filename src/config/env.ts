@@ -10,9 +10,12 @@ export type Env = {
     JWT_SECRET: string
     // Storage
     STORAGE_DRIVER: StorageDriver
-    STORAGE_PUBLIC_URL: string
-    // R2
+    STORAGE_PUBLIC_URL: string | undefined
     BUCKET: R2Bucket
+    R2_ACCOUNT_ID: string
+    R2_ACCESS_KEY_ID: string
+    R2_SECRET_ACCESS_KEY: string
+    R2_BUCKET_NAME: string
     // MinIO
     MINIO_ENDPOINT: string
     MINIO_BUCKET: string

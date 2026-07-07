@@ -10,7 +10,18 @@ export const getStorage = (c: Context<Env>): IStorage => {
 
   if (driver === 'r2') {
     if (!env.BUCKET) throw new Error('R2 binding "BUCKET" tidak ditemukan di wrangler.jsonc')
-    return new R2Storage(env.BUCKET, env.STORAGE_PUBLIC_URL)
+
+    const s3Config =
+      env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET_NAME
+        ? {
+            accountId: env.R2_ACCOUNT_ID,
+            accessKeyId: env.R2_ACCESS_KEY_ID,
+            secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+            bucketName: env.R2_BUCKET_NAME,
+          }
+        : undefined
+
+    return new R2Storage(env.BUCKET, env.STORAGE_PUBLIC_URL, s3Config)
   }
 
   if (driver === 'minio') {
@@ -19,7 +30,7 @@ export const getStorage = (c: Context<Env>): IStorage => {
       env.MINIO_BUCKET,
       env.MINIO_ACCESS_KEY,
       env.MINIO_SECRET_KEY,
-      env.STORAGE_PUBLIC_URL
+      env.STORAGE_PUBLIC_URL,
     )
   }
 

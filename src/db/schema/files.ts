@@ -5,7 +5,7 @@ export const files = pgTable('files', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
   fileName: text('file_name').notNull(),
-  fileKey: text('file_key').notNull(),
+  fileKey: text('file_key').notNull().unique(),
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
