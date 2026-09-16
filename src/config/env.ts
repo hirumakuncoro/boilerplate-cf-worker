@@ -21,6 +21,8 @@ export type Env = {
     MINIO_BUCKET: string
     MINIO_ACCESS_KEY: string
     MINIO_SECRET_KEY: string
+    // Rate limiter
+    RATE_LIMITER: RateLimit
   },
   Variables: {
     userId: number
