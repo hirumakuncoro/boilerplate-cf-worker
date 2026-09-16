@@ -3,15 +3,12 @@ import { routes } from './routes'
 import { errorHandler } from './middlewares/error.middleware'
 import { Env } from './config/env'
 import { cors } from 'hono/cors'
-// import { logger } from 'hono/logger'
 import { rateLimitMiddleware } from './middlewares/rate-limit.middleware'
 
 const app = new Hono<Env>()
 
-// app.use('*', logger())
-
 app.use('*', cors({
-  origin: ['https://storage-nij.pages.dev', 'http://localhost:5173'],
+  origin: ['https://app.pages.dev', 'http://localhost:5173'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }))
