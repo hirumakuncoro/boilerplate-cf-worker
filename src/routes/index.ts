@@ -12,5 +12,5 @@ routes.get('/health', (c) => {
   })
 })
 
-routes.route('/auth', authRouter)
+routes.route('/auth', authRouter())
 routes.route('/upload', uploadRouter)
