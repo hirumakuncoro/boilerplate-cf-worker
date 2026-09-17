@@ -43,7 +43,7 @@ export const authRepository = (db: DbOrTx): AuthRepository => ({
     return result[0] ?? null
   },
 
-  create: async (data: { email: string; password: string; name: string }): Promise<User> => {
+  create: async (data: NewUser): Promise<User> => {
     const result = await db
       .insert(users)
       .values({

@@ -10,5 +10,11 @@ export type AuthResponse = {
   refreshToken: string
 }
 
+export type UserRequest = {
+  email: string;
+  password: string;
+  name: string
+}
+
 export type ApiResponse<T> = { message: string; data: T }
 
