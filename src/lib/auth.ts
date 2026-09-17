@@ -19,6 +19,8 @@ export const createAuthUtils = (secret: string) => {
     }
   }
 
+  const generateNonce = (): string => crypto.randomUUID()
+
   return {
     hashPassword: (password: string): Promise<string> =>
       bcrypt.hash(password, 10),
@@ -27,10 +29,10 @@ export const createAuthUtils = (secret: string) => {
       bcrypt.compare(password, hash),
 
     generateAccessToken: (userId: number, nowMs: number = Date.now()): Promise<string> =>
-      sign({ userId, type: 'access', exp: Math.floor(nowMs / 1000) + ACCESS_TOKEN_EXP }, secret),
+      sign({ userId, type: 'access', nonce: generateNonce(), exp: Math.floor(nowMs / 1000) + ACCESS_TOKEN_EXP }, secret),
 
     generateRefreshToken: (userId: number, nowMs: number = Date.now()): Promise<string> =>
-      sign({ userId, type: 'refresh', exp: Math.floor(nowMs / 1000) + REFRESH_TOKEN_EXP }, secret),
+      sign({ userId, type: 'refresh', nonce: generateNonce(), exp: Math.floor(nowMs / 1000) + REFRESH_TOKEN_EXP }, secret),
 
     refreshTokenExpiresAt: (nowMs: number = Date.now()): Date =>
       new Date(nowMs + REFRESH_TOKEN_EXP * 1000),

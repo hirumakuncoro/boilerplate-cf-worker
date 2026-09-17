@@ -1,5 +1,5 @@
 import { users, User, NewUser, RefreshToken, refreshTokens, NewRefreshToken } from '../../db'
-import { eq } from 'drizzle-orm'
+import { eq, lt } from 'drizzle-orm'
 import { getDb } from '../../db/client'
 import { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
 
@@ -74,7 +74,7 @@ export const authRepository = (db: DbOrTx): AuthRepository => ({
   },
 
   deleteExpiredTokens: async (now: Date) => {
-    await db.delete(refreshTokens).where(eq(refreshTokens.expiresAt, now))
+    await db.delete(refreshTokens).where(lt(refreshTokens.expiresAt, now))
   },
 
   deleteAndGetRefreshToken: async (token: string) => {

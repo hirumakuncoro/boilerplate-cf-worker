@@ -88,11 +88,11 @@ export const authService = (repo: AuthRepository, secret: string) => {
     },
 
     refresh: async (refreshToken: string) => {
-      const deletedToken = await repo.deleteAndGetRefreshToken(refreshToken)
-      if (!deletedToken) throw new UnauthorizedError('Refresh token tidak valid atau expired')
-
       const decoded = await auth.verifyRefreshToken(refreshToken)
       if (!decoded) throw new UnauthorizedError('Refresh token tidak valid atau expired')
+
+      const deletedToken = await repo.deleteAndGetRefreshToken(refreshToken)
+      if (!deletedToken) throw new UnauthorizedError('Refresh token tidak valid atau expired')
 
       const user = await repo.findById(decoded.userId)
       if (!user) throw new UnauthorizedError('User tidak ditemukan')
