@@ -1,12 +1,8 @@
 import { createAuthUtils } from '../../lib/auth'
 import { BadRequestError, UnauthorizedError } from '../../lib/errors'
 import { AuthRepository } from './auth.repository'
-
-type UserResponse = {
-  id: number
-  email: string
-  name: string
-}
+import { UserResponse } from './auth.types'
+import { LoginInput, RegisterInput } from './auth.validator'
 
 const toUserResponse = (user: UserResponse) => ({
   id: user.id,
@@ -18,7 +14,7 @@ export const authService = (repo: AuthRepository, secret: string) => {
   const auth = createAuthUtils(secret)
 
   return {
-    register: async (data: { email: string; password: string; name: string }) => {
+    register: async (data: RegisterInput) => {
       const existingUser = await repo.findByEmail(data.email)
       if (existingUser) {
         throw new BadRequestError('Email sudah terdaftar')
@@ -52,7 +48,7 @@ export const authService = (repo: AuthRepository, secret: string) => {
       }
     },
 
-    login: async (data: { email: string; password: string }) => {
+    login: async (data: LoginInput) => {
       const user = await repo.findByEmail(data.email)
       if (!user) {
         throw new UnauthorizedError('Email atau password salah')
