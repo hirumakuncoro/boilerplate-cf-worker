@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { Env } from '../config/env'
-import { authRouter } from '../modules/auth/auth.route'
+import { authRouter } from '../modules/auth/auth.handler'
 import { uploadRouter } from '../modules/upload/upload.route'
 
 export const routes = new Hono<Env>()

@@ -1,12 +1,21 @@
-import { Context } from 'hono'
-import { Env } from '../../config/env'
-import { authRepository } from './auth.repository'
 import { createAuthUtils } from '../../lib/auth'
 import { BadRequestError, UnauthorizedError } from '../../lib/errors'
+import { AuthRepository } from './auth.repository'
 
-export const authService = (c: Context<Env>) => {
-  const repo = authRepository(c)
-  const auth = createAuthUtils(c)
+type UserResponse = {
+  id: number
+  email: string
+  name: string
+}
+
+const toUserResponse = (user: UserResponse) => ({
+  id: user.id,
+  email: user.email,
+  name: user.name,
+})
+
+export const authService = (repo: AuthRepository, secret: string) => {
+  const auth = createAuthUtils(secret)
 
   return {
     register: async (data: { email: string; password: string; name: string }) => {
@@ -16,22 +25,28 @@ export const authService = (c: Context<Env>) => {
       }
 
       const hashedPassword = await auth.hashPassword(data.password)
+      const result = await repo.transaction(async (txRepo) => {
+        const user = await txRepo.create({
+          email: data.email,
+          password: hashedPassword,
+          name: data.name,
+        })
 
-      const user = await repo.create({
-        email: data.email,
-        password: hashedPassword,
-        name: data.name,
+        const accessToken = await auth.generateAccessToken(user.id)
+        const refreshToken = await auth.generateRefreshToken(user.id)
+
+        await txRepo.insertRefreshToken({
+          token: refreshToken,
+          userId: user.id,
+          expiresAt: auth.refreshTokenExpiresAt(),
+        })
+
+        return { user, accessToken, refreshToken }
       })
 
-      const accessToken = await auth.generateAccessToken(user.id)
-      const refreshToken = await auth.generateRefreshToken(user.id)
-
+      const { user, accessToken, refreshToken } = result
       return {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
+        user: toUserResponse(user),
         accessToken,
         refreshToken,
       }
@@ -51,34 +66,47 @@ export const authService = (c: Context<Env>) => {
       const accessToken = await auth.generateAccessToken(user.id)
       const refreshToken = await auth.generateRefreshToken(user.id)
 
+      await repo.transaction(async (txRepo) => {
+        await txRepo.deleteRefreshTokenByUserId(user.id)
+        await txRepo.insertRefreshToken({
+          token: refreshToken,
+          userId: user.id,
+          expiresAt: auth.refreshTokenExpiresAt(),
+        })
+      })
+
       return {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
+        user: toUserResponse(user),
         accessToken,
         refreshToken,
       }
     },
 
     logout: async (refreshToken: string) => {
-      await auth.revokeRefreshToken(refreshToken)
+      await repo.deleteRefreshToken(refreshToken)
       return null
     },
 
     refresh: async (refreshToken: string) => {
+      const deletedToken = await repo.deleteAndGetRefreshToken(refreshToken)
+      if (!deletedToken) throw new UnauthorizedError('Refresh token tidak valid atau expired')
+
       const decoded = await auth.verifyRefreshToken(refreshToken)
       if (!decoded) throw new UnauthorizedError('Refresh token tidak valid atau expired')
 
       const user = await repo.findById(decoded.userId)
       if (!user) throw new UnauthorizedError('User tidak ditemukan')
 
-      await auth.revokeRefreshToken(refreshToken)
       const newAccessToken = await auth.generateAccessToken(user.id)
       const newRefreshToken = await auth.generateRefreshToken(user.id)
+      await repo.insertRefreshToken({
+        token: newRefreshToken,
+        userId: user.id,
+        expiresAt: auth.refreshTokenExpiresAt(),
+      })
 
       return {
+        user: toUserResponse(user),
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       }
@@ -87,7 +115,7 @@ export const authService = (c: Context<Env>) => {
     me: async (userId: number) => {
       const user = await repo.findById(userId)
       if (!user) throw new UnauthorizedError('User tidak ditemukan')
-      return { id: user.id, email: user.email, name: user.name }
+      return toUserResponse(user)
     },
   }
 }
